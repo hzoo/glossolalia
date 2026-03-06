@@ -425,6 +425,15 @@ pub fn add(
     if (step.rootModuleTarget().os.tag == .linux) {
         step.addIncludePath(b.path("src/apprt/gtk"));
     }
+    if (step.rootModuleTarget().os.tag == .macos) {
+        if (b.lazyDependency("miniaudio", .{
+            .target = target,
+            .optimize = optimize,
+        })) |miniaudio_dep| {
+            step.addIncludePath(miniaudio_dep.path("."));
+            step.addCSourceFiles(.{ .files = &.{"src/audio/miniaudio.c"} });
+        }
+    }
 
     // libcpp is required for various dependencies. On MSVC, we must
     // not use linkLibCpp because Zig unconditionally passes -nostdinc++
@@ -514,6 +523,10 @@ pub fn add(
         if (self.config.renderer == .opengl) {
             step.linkFramework("OpenGL");
         }
+
+        step.linkFramework("AudioToolbox");
+        step.linkFramework("CoreAudio");
+        step.linkFramework("CoreFoundation");
 
         // Apple platforms do not include libc libintl so we bundle it.
         // This is LGPL but since our source code is open source we are

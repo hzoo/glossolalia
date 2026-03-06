@@ -116,6 +116,7 @@ pub const Action = union(Key) {
     decaln,
     window_title: WindowTitle,
     report_pwd: ReportPwd,
+    background_video_url: BackgroundVideoUrl,
     show_desktop_notification: ShowDesktopNotification,
     progress_report: osc.Command.ProgressReport,
     start_hyperlink: StartHyperlink,
@@ -214,6 +215,7 @@ pub const Action = union(Key) {
             "decaln",
             "window_title",
             "report_pwd",
+            "background_video_url",
             "show_desktop_notification",
             "progress_report",
             "start_hyperlink",
@@ -350,6 +352,16 @@ pub const Action = union(Key) {
         pub const C = lib.String;
 
         pub fn cval(self: ReportPwd) ReportPwd.C {
+            return .init(self.url);
+        }
+    };
+
+    pub const BackgroundVideoUrl = struct {
+        url: []const u8,
+
+        pub const C = lib.String;
+
+        pub fn cval(self: BackgroundVideoUrl) BackgroundVideoUrl.C {
             return .init(self.url);
         }
     };
@@ -2244,6 +2256,10 @@ pub fn Stream(comptime H: type) type {
                 .report_pwd => |v| {
                     @branchHint(.likely);
                     self.handler.vt(.report_pwd, .{ .url = v.value });
+                },
+
+                .background_video_url => |v| {
+                    try self.handler.vt(.background_video_url, .{ .url = v.value });
                 },
 
                 .mouse_shape => |v| {

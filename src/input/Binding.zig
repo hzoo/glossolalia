@@ -612,6 +612,17 @@ pub const Action = union(enum) {
     /// If the title is empty, the tab title override is cleared.
     set_tab_title: []const u8,
 
+    /// Prompt for a background video URL and start playback.
+    ///
+    /// Leave blank to clear the currently active background video.
+    prompt_background_video_url,
+
+    /// Toggle background video visibility while playback continues.
+    clear_background_video,
+
+    /// Stop playback and clear the currently active background video.
+    stop_background_video,
+
     /// Create a new split in the specified direction.
     ///
     /// Valid arguments:
@@ -1372,6 +1383,9 @@ pub const Action = union(enum) {
             .prompt_tab_title,
             .set_surface_title,
             .set_tab_title,
+            .prompt_background_video_url,
+            .clear_background_video,
+            .stop_background_video,
             .clear_screen,
             .select_all,
             .scroll_to_top,
