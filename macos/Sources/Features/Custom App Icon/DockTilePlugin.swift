@@ -7,15 +7,44 @@ class DockTilePlugin: NSObject, NSDockTilePlugIn {
 
     private let pluginBundle = Bundle(for: DockTilePlugin.self)
 
-    // Separate defaults based on debug vs release builds so we can test icons
-    // without messing up releases.
-    #if DEBUG
-    private let ghosttyUserDefaults = UserDefaults(suiteName: "com.mitchellh.ghostty.debug")
-    #else
-    private let ghosttyUserDefaults = UserDefaults(suiteName: "com.mitchellh.ghostty")
-    #endif
-
     private var iconChangeObserver: Any?
+
+    /// The URL to the enclosing app bundle, determined from the plugin bundle path.
+    var ghosttyAppURL: URL? {
+        Self.appBundleURL(for: pluginBundle.bundleURL)
+    }
+
+    var ghosttyUserDefaults: UserDefaults? {
+        guard
+            let ghosttyAppURL,
+            let bundleIdentifier = Bundle(url: ghosttyAppURL)?.bundleIdentifier
+        else {
+            return UserDefaults(suiteName: "com.mitchellh.ghostty")
+        }
+
+        return UserDefaults(suiteName: bundleIdentifier)
+    }
+
+    /// Determine the enclosing app bundle for the dock tile plugin bundle.
+    ///
+    /// We intentionally avoid matching a specific bundle name (such as
+    /// "Ghostty.app") so renaming the app in Finder still works.
+    static func appBundleURL(for pluginBundleURL: URL) -> URL? {
+        var url = pluginBundleURL
+        while true {
+            if url.pathExtension.compare("app", options: .caseInsensitive) == .orderedSame {
+                return url
+            }
+
+            let parent = url.deletingLastPathComponent()
+            if parent.path == url.path {
+                // Safety stop: this should only happen at filesystem root.
+                return nil
+            }
+
+            url = parent
+        }
+    }
 
     /// The primary NSDockTilePlugin function.
     func setDockTile(_ dockTile: NSDockTile?) {

@@ -4,6 +4,7 @@
 *.log
 .DS_Store
 .vscode/
+.claude/settings.local.json
 .direnv/
 .envrc.local
 .flatpak-builder/
@@ -28,4 +29,3 @@ glad.zip
 /ghostty.qcow2
 
 vgcore.*
-
