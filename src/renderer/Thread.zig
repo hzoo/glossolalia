@@ -119,7 +119,10 @@ pub const DerivedConfig = struct {
 
     pub fn init(config: *const configpkg.Config) DerivedConfig {
         return .{
-            .custom_shader_animation = config.@"custom-shader-animation",
+            .custom_shader_animation = if (config.glossolalia.isEnabled())
+                .always
+            else
+                config.@"custom-shader-animation",
             .scrollback_compression = config.@"scrollback-compression",
         };
     }
@@ -350,7 +353,12 @@ fn syncDrawTimer(self: *Thread) void {
 }
 
 /// Drain the mailbox.
-fn drainMailbox(self: *Thread) !void {
+const DrainResult = struct {
+    needs_update_frame: bool = false,
+    needs_draw: bool = false,
+};
+
+fn drainMailbox(self: *Thread) !DrainResult {
     // There's probably a more elegant way to do this...
     //
     // This is effectively an @autoreleasepool{} block, which we need in
@@ -361,8 +369,17 @@ fn drainMailbox(self: *Thread) !void {
         void;
     defer if (builtin.os.tag.isDarwin()) pool.deinit();
 
+    var result: DrainResult = .{};
     while (self.mailbox.pop()) |message| {
-        log.debug("mailbox message={}", .{message});
+        switch (message) {
+            .background_video_frame, .background_video_clear => {
+                result.needs_draw = true;
+            },
+            else => {
+                result.needs_update_frame = true;
+                log.debug("mailbox message={}", .{message});
+            },
+        }
         switch (message) {
             .crash => @panic("crash request, crashing intentionally"),
 
@@ -375,17 +392,6 @@ fn drainMailbox(self: *Thread) !void {
 
                 // Visibility affects our QoS class
                 self.setQosClass();
-
-                // If we became visible then we immediately rebuild cells
-                // (renderCallback skips updateFrame while invisible) and draw.
-                if (v) {
-                    self.renderer.updateFrame(
-                        self.state,
-                        self.flags.cursor_blink_visible,
-                    ) catch |err|
-                        log.warn("error rendering on visibility regain err={}", .{err});
-                    self.drawFrame(false);
-                }
 
                 // Notify the renderer so it can update any state.
                 self.renderer.setVisible(v);
@@ -503,8 +509,17 @@ fn drainMailbox(self: *Thread) !void {
                     try self.renderer.setMacOSDisplayID(v);
                 }
             },
+
+            .background_video_frame => |frame| {
+                self.renderer.setBackgroundVideoFrame(frame);
+            },
+
+            .background_video_clear => {
+                self.renderer.clearBackgroundVideo();
+            },
         }
     }
+    return result;
 }
 
 fn changeConfig(self: *Thread, config: *const DerivedConfig) !void {
@@ -557,11 +572,22 @@ fn wakeupCallback(
 
     // When we wake up, we check the mailbox. Mailbox producers should
     // wake up our thread after publishing.
-    t.drainMailbox() catch |err|
+    const drained = t.drainMailbox() catch |err| drained: {
         log.err("error draining mailbox err={}", .{err});
+        break :drained DrainResult{};
+    };
 
-    // Render immediately
-    _ = renderCallback(t, undefined, undefined, {});
+    if (drained.needs_update_frame) {
+        // Render immediately.
+        _ = renderCallback(t, undefined, undefined, {});
+    } else if (drained.needs_draw) {
+        // Draw immediately without rebuilding terminal state.
+        t.drawFrame(false);
+    } else {
+        // Wakeups from terminal/IO activity often have no renderer mailbox
+        // messages, but they still require a frame rebuild.
+        _ = renderCallback(t, undefined, undefined, {});
+    }
 
     // PageList mutations maintain their own compression dirty state. Checking
     // it here covers output, resize, and viewport scrolling uniformly.
@@ -642,8 +668,8 @@ fn renderCallback(
         return .disarm;
     };
 
-    // If we're not visible there's no point spending CPU rebuilding cells —
-    // we'll catch up when the .visible mailbox message flips us back on.
+    // If we're not visible there's no point spending CPU rebuilding cells.
+    // The .visible mailbox message rebuilds the frame when the surface returns.
     if (!t.flags.visible) return .disarm;
 
     // Update our frame data
