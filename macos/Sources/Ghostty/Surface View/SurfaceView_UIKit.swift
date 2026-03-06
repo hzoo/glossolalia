@@ -71,6 +71,10 @@ extension Ghostty {
             )
         }
 
+        func promptBackgroundVideoUrl() {
+            // iOS does not currently expose a URL prompt for background video.
+        }
+
         // MARK: UIView
 
         override class var layerClass: AnyClass {
