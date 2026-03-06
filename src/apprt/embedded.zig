@@ -21,6 +21,7 @@ const CoreSurface = @import("../Surface.zig");
 const configpkg = @import("../config.zig");
 const Config = configpkg.Config;
 const String = @import("../main_c.zig").String;
+const global_state = &@import("../global.zig").state;
 
 const log = std.log.scoped(.embedded_window);
 
@@ -78,6 +79,11 @@ pub const App = struct {
 
         /// Close the current surface given by this function.
         close_surface: ?*const fn (SurfaceUD, bool) callconv(.c) void = null,
+
+        /// Prompt for a background video URL for the currently focused surface.
+        /// The embedder should collect user input and call
+        /// `ghostty_surface_set_background_video_url`.
+        prompt_background_video_url: ?*const fn (SurfaceUD) callconv(.c) void = null,
     };
 
     /// This is the key event sent for ghostty_surface_key and
@@ -657,6 +663,12 @@ pub const Surface = struct {
 
     pub fn getTitle(self: *Surface) ?[:0]const u8 {
         return self.title;
+    }
+
+    pub fn promptBackgroundVideoUrl(self: *Surface) bool {
+        const func = self.app.opts.prompt_background_video_url orelse return false;
+        func(self.userdata);
+        return true;
     }
 
     pub fn supportsClipboard(
@@ -1999,6 +2011,90 @@ pub const CAPI = struct {
             log.err("error performing binding action action={f} err={}", .{ action, err });
             return false;
         };
+    }
+
+    fn cStringFromCoreOwned(ptr: *Surface, owned: ?[]u8) String {
+        const value = owned orelse return .empty;
+        defer ptr.core_surface.alloc.free(value);
+
+        const copied = global_state.alloc.dupe(u8, value) catch return .empty;
+        return .fromSlice(copied);
+    }
+
+    /// Set or clear the background video URL for the surface.
+    export fn ghostty_surface_set_background_video_url(
+        ptr: *Surface,
+        url: ?[*:0]const u8,
+    ) void {
+        const slice = std.mem.sliceTo(url orelse "", 0);
+        if (slice.len == 0) {
+            ptr.core_surface.stopBackgroundVideo();
+            return;
+        }
+
+        ptr.core_surface.setBackgroundVideoUrl(slice) catch |err| {
+            log.err("error setting background video url err={}", .{err});
+        };
+    }
+
+    /// Returns true if background media is currently active.
+    export fn ghostty_surface_has_background_video(ptr: *Surface) bool {
+        return ptr.core_surface.hasBackgroundVideo();
+    }
+
+    /// Returns true when background media is currently paused.
+    export fn ghostty_surface_is_background_video_paused(ptr: *Surface) bool {
+        return ptr.core_surface.isBackgroundVideoPaused();
+    }
+
+    /// Returns true when seeking is supported for the current background media.
+    export fn ghostty_surface_is_background_video_seek_supported(ptr: *Surface) bool {
+        return ptr.core_surface.isBackgroundVideoSeekSupported();
+    }
+
+    /// Set pause state for current background media.
+    export fn ghostty_surface_set_background_video_paused(ptr: *Surface, paused: bool) bool {
+        return ptr.core_surface.setBackgroundVideoPaused(paused);
+    }
+
+    /// Seek current background media relative to the current position.
+    export fn ghostty_surface_seek_background_video(ptr: *Surface, seconds: i32) bool {
+        return ptr.core_surface.seekBackgroundVideo(seconds);
+    }
+
+    /// Returns total background media queue length.
+    export fn ghostty_surface_background_media_queue_count(ptr: *Surface) u32 {
+        return ptr.core_surface.backgroundMediaQueueCount();
+    }
+
+    /// Returns zero-based queue index, or -1 when no media is active.
+    export fn ghostty_surface_background_media_queue_index(ptr: *Surface) i32 {
+        return ptr.core_surface.backgroundMediaQueueIndex();
+    }
+
+    /// Returns the current background media title when known.
+    export fn ghostty_surface_background_media_title(ptr: *Surface) String {
+        return cStringFromCoreOwned(ptr, ptr.core_surface.dupBackgroundMediaTitle());
+    }
+
+    /// Returns the current background media artist/uploader when known.
+    export fn ghostty_surface_background_media_artist(ptr: *Surface) String {
+        return cStringFromCoreOwned(ptr, ptr.core_surface.dupBackgroundMediaArtist());
+    }
+
+    /// Returns the current background media URL.
+    export fn ghostty_surface_background_media_url(ptr: *Surface) String {
+        return cStringFromCoreOwned(ptr, ptr.core_surface.dupBackgroundMediaUrl());
+    }
+
+    /// Advance to next background media track in queue.
+    export fn ghostty_surface_next_background_media_track(ptr: *Surface) bool {
+        return ptr.core_surface.nextBackgroundMediaTrack();
+    }
+
+    /// Move to previous background media track in queue.
+    export fn ghostty_surface_previous_background_media_track(ptr: *Surface) bool {
+        return ptr.core_surface.previousBackgroundMediaTrack();
     }
 
     /// Complete a clipboard read request started via the read callback.
