@@ -11,7 +11,6 @@ if ! git diff --quiet || ! git diff --cached --quiet; then
 fi
 
 git fetch "$upstream_remote" "$upstream_branch"
-git fetch origin "$fork_branch"
 git checkout "$fork_branch"
 
 if ! git rebase "$upstream_remote/$upstream_branch"; then

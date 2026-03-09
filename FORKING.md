@@ -95,7 +95,10 @@ That script:
 
 - refuses a dirty worktree
 - fetches `upstream/main`
-- rebases `glossolalia` onto it
+- rebases the local `glossolalia` branch onto it
+
+It does not depend on `origin/glossolalia` for the rebase target. The
+only source of truth for rebasing is `upstream/main`.
 
 Use `.github/workflows/fork-rebase-check.yml` to catch breakage on a schedule.
 
