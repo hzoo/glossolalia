@@ -33,6 +33,7 @@ jobs:
       product_slug: ${{ steps.meta.outputs.product_slug }}
       appcast_url: ${{ steps.meta.outputs.appcast_url }}
       dmg_name: ${{ steps.meta.outputs.dmg_name }}
+      publish_appcast: ${{ steps.update_mode.outputs.publish_appcast }}
     env:
       PRODUCT_NAME: Glossolalia
       PRODUCT_SLUG: glossolalia
@@ -93,7 +94,17 @@ jobs:
             echo "commit_url_template=$COMMIT_URL_TEMPLATE"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Resolve update mode
+        id: update_mode
+        run: |
+          if [[ -n "${{ secrets.SPARKLE_PUBLIC_ED_KEY }}" && -n "${{ secrets.SPARKLE_PRIVATE_ED_KEY }}" ]]; then
+            echo "publish_appcast=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish_appcast=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Setup Sparkle
+        if: ${{ steps.update_mode.outputs.publish_appcast == 'true' }}
         env:
           SPARKLE_VERSION: 2.9.0
         run: |
@@ -142,8 +153,12 @@ jobs:
           /usr/libexec/PlistBuddy -c "Set :GhosttyCommit ${{ steps.meta.outputs.commit }}" "$APP_PATH/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleVersion ${{ steps.meta.outputs.build }}" "$APP_PATH/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Set :CFBundleShortVersionString ${{ steps.meta.outputs.version }}" "$APP_PATH/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $SPARKLE_KEY_PUB" "$APP_PATH/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Delete :SUEnableAutomaticChecks" "$APP_PATH/Contents/Info.plist" || true
+          if [[ -n "$SPARKLE_KEY_PUB" ]]; then
+            /usr/libexec/PlistBuddy -c "Set :SUPublicEDKey $SPARKLE_KEY_PUB" "$APP_PATH/Contents/Info.plist"
+          else
+            /usr/libexec/PlistBuddy -c "Delete :SUPublicEDKey" "$APP_PATH/Contents/Info.plist" || true
+          fi
 
       - name: Codesign app bundle
         env:
@@ -208,6 +223,7 @@ jobs:
             ${{ steps.meta.outputs.dsym_name }}
 
       - name: Generate appcast
+        if: ${{ steps.update_mode.outputs.publish_appcast == 'true' }}
         env:
           PRODUCT_NAME: ${{ steps.meta.outputs.product_name }}
           PRODUCT_VERSION: ${{ steps.meta.outputs.version }}
@@ -228,12 +244,14 @@ jobs:
           python3 dist/macos/update_appcast_fork.py
 
       - name: Upload Pages artifact
+        if: ${{ steps.update_mode.outputs.publish_appcast == 'true' }}
         uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy-pages:
     needs: release-macos
+    if: ${{ needs.release-macos.outputs.publish_appcast == 'true' }}
     runs-on: ubuntu-latest
     environment:
       name: github-pages

@@ -4,9 +4,9 @@ enum ProductBrand {
     static let displayName =
         infoString("CFBundleDisplayName") ??
         infoString("CFBundleName") ??
-        "Ghostty"
+        "Glossolalia"
 
-    static let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.mitchellh.ghostty"
+    static let bundleIdentifier = Bundle.main.bundleIdentifier ?? "dev.glossolalia.app"
     static let notificationNamespace = infoString("GlossolaliaNotificationNamespace") ?? bundleIdentifier
     static let defaultsSuiteName = infoString("GlossolaliaDefaultsSuiteName") ?? bundleIdentifier
 
@@ -17,11 +17,9 @@ enum ProductBrand {
     static func updateFeedURL(channel: Ghostty.AutoUpdateChannel) -> String? {
         switch channel {
         case .tip:
-            return infoString("GlossolaliaUpdateTipFeedURL") ??
-                "https://tip.files.ghostty.dev/appcast.xml"
+            return infoString("GlossolaliaUpdateTipFeedURL")
         case .stable:
-            return infoString("GlossolaliaUpdateStableFeedURL") ??
-                "https://release.files.ghostty.org/appcast.xml"
+            return infoString("GlossolaliaUpdateStableFeedURL")
         }
     }
 

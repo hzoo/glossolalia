@@ -100,8 +100,6 @@ That script:
 It does not depend on `origin/glossolalia` for the rebase target. The
 only source of truth for rebasing is `upstream/main`.
 
-Use `.github/workflows/fork-rebase-check.yml` to catch breakage on a schedule.
-
 Recommended local git config:
 
 ```sh
@@ -133,6 +131,9 @@ Required secrets:
 - `APPLE_NOTARIZATION_ISSUER`
 - `APPLE_NOTARIZATION_KEY_ID`
 - `APPLE_NOTARIZATION_KEY`
+
+Optional update secrets:
+
 - `SPARKLE_PUBLIC_ED_KEY`
 - `SPARKLE_PRIVATE_ED_KEY`
 
@@ -140,7 +141,7 @@ Before first public release:
 
 - replace the placeholder app icon asset name if you want a non-Ghostty icon
 - choose the final release bundle ID and product name in the workflow env
-- enable GitHub Pages so the generated `appcast.xml` has a stable URL
+- if you want in-app updates now, enable GitHub Pages so the generated `appcast.xml` has a stable URL
 
 ## Agent Rules
 

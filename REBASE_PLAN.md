@@ -48,7 +48,6 @@ Already separated by the current staged work:
 - `FORKING.md`
 - `REBASE_PLAN.md`
 - `scripts/fork-sync.sh`
-- `.github/workflows/fork-rebase-check.yml`
 - `.github/workflows/release-fork-macos.yml`
 - `dist/macos/update_appcast_fork.py`
 - `macos/GlossolaliaBrand.xcconfig`
