@@ -15,9 +15,9 @@ Options:
 
 Environment overrides:
   APP_NAME           Default: Glossolalia
-  BUNDLE_ID          Default: dev.glossolalia.app
+  BUNDLE_ID          Default: com.henryzoo.glossolalia
   EXECUTABLE_NAME    Default: glossolalia
-  ICON_NAME          Default: Ghostty
+  ICON_NAME          Default: AppIconImage
   INSTALL_DIR        Default: /Applications
 EOF
 }
@@ -52,9 +52,9 @@ done
 
 root_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 app_name="${APP_NAME:-Glossolalia}"
-bundle_id="${BUNDLE_ID:-dev.glossolalia.app}"
+bundle_id="${BUNDLE_ID:-com.henryzoo.glossolalia}"
 executable_name="${EXECUTABLE_NAME:-glossolalia}"
-icon_name="${ICON_NAME:-Ghostty}"
+icon_name="${ICON_NAME:-AppIconImage}"
 install_dir="${INSTALL_DIR:-/Applications}"
 
 echo "building GhosttyKit with Zig..."

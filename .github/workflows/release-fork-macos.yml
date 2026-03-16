@@ -37,9 +37,9 @@ jobs:
     env:
       PRODUCT_NAME: Glossolalia
       PRODUCT_SLUG: glossolalia
-      PRODUCT_BUNDLE_ID: dev.glossolalia.app
+      PRODUCT_BUNDLE_ID: com.henryzoo.glossolalia
       PRODUCT_EXECUTABLE: glossolalia
-      PRODUCT_ICON_NAME: Ghostty
+      PRODUCT_ICON_NAME: AppIconImage
       PRODUCT_MINIMUM_SYSTEM_VERSION: 13.0.0
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2

@@ -139,7 +139,7 @@ Optional update secrets:
 
 Before first public release:
 
-- replace the placeholder app icon asset name if you want a non-Ghostty icon
+- replace the rendered files in `macos/Assets.xcassets/AppIconImage.imageset` if you want a different app icon
 - choose the final release bundle ID and product name in the workflow env
 - if you want in-app updates now, enable GitHub Pages so the generated `appcast.xml` has a stable URL
 

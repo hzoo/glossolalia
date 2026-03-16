@@ -1,19 +1,19 @@
 <!-- LOGO -->
 <h1>
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/fe853809-ba8b-400b-83ab-a9a0da25be8a" alt="Logo" width="128">
-  <br>Ghostty
+  <img src="images/icons/glossolalia-source-2048.png" alt="Glossolalia icon" width="128">
+  <br>Glossolalia
 </h1>
   <p align="center">
-    Fast, native, feature-rich terminal emulator pushing modern features.
+    Thin Ghostty fork with audio-reactive rendering and standalone macOS app releases.
     <br />
-    <a href="#about">About</a>
+    <a href="#glossolalia-fork-quick-test">Quick Test</a>
     ·
-    <a href="https://ghostty.org/download">Download</a>
+    <a href="https://github.com/hzoo/glossolalia/releases">Releases</a>
     ·
-    <a href="https://ghostty.org/docs">Documentation</a>
+    <a href="FORKING.md">Forking</a>
     ·
-    <a href="CONTRIBUTING.md">Contributing</a>
+    <a href="AGENTS.md">Workflow</a>
     ·
     <a href="HACKING.md">Developing</a>
   </p>
@@ -78,7 +78,7 @@ Optional local branding override:
 
 ```sh
 APP_NAME=Glossolalia \
-BUNDLE_ID=dev.glossolalia.app \
+BUNDLE_ID=com.henryzoo.glossolalia \
 EXECUTABLE_NAME=glossolalia \
 ./scripts/build-macos-app.sh --install
 ```
