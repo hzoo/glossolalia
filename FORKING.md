@@ -145,6 +145,15 @@ NOTARY_PROFILE="glossolalia-notary" \
 ./scripts/release-macos-local.sh 0.1.0
 ```
 
+## Pull Requests
+
+Fork PRs should stay light:
+
+- use topic branches against `glossolalia`
+- keep commits scoped by concern
+- expect manual review and local rebases for upstream conflict repair
+- rely on `.github/workflows/fork-sanity.yml` only for lightweight hygiene, not product signoff
+
 ## Agent Rules
 
 - Prefer new files over edits in upstream churn zones.
