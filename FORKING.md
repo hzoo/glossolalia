@@ -10,12 +10,12 @@ Keep product identity declarative:
 - Xcode build-time identity defaults live in `macos/GlossolaliaBrand.xcconfig`
 - macOS runtime branding reads from `macos/Sources/Helpers/ProductBrand.swift`
 - app icons live under `macos/Assets.xcassets`
-- release/update automation should read from one fork-owned workflow, not Ghostty’s hosted infra assumptions
+- release/update plumbing should stay fork-owned and local-first
 
 The intended cutover is:
 
 1. keep local defaults safe in `macos/GlossolaliaBrand.xcconfig`
-2. override shipping identity in `.github/workflows/release-fork-macos.yml`
+2. override shipping identity in `scripts/release-macos-local.sh`
 3. when the brand is final, move those release overrides back into the xcconfig
 
 ## Branch Shape
@@ -26,20 +26,22 @@ Keep three lanes:
 - `glossolalia`: ship branch
 - topic branches: one concern per branch, rebased onto `glossolalia`
 
-Do not collapse the fork into one giant squash commit again. Keep a patch stack:
+Do not collapse the fork into one giant squash commit again. Keep this patch stack:
 
-1. brand/release surface
-2. config/API hooks
+1. fork workflow and branding seam
+2. config/protocol hooks
 3. renderer hooks
 4. audio engine
 5. video engine
 6. macOS glue
 7. GTK glue
+8. final macOS identity
+9. local release and fork automation policy
 
 This makes conflict repair local and agent-friendly.
 
-For the concrete migration from the current monolith commit to that stack,
-see `REBASE_PLAN.md`.
+For the exact agent-assisted rebase and verification procedure, see
+`REBASE_PLAN.md`.
 
 ## Daily Workflow
 
@@ -93,19 +95,21 @@ Use `scripts/fork-sync.sh` for local rebases:
 
 That script:
 
-- refuses a dirty worktree
+- refuses tracked worktree changes
 - fetches `upstream/main`
+- creates a timestamped safety branch
+- fast-forwards local `main` when safe
 - rebases the local `glossolalia` branch onto it
+- prints a `range-diff` against the pre-rebase stack
 
 It does not depend on `origin/glossolalia` for the rebase target. The
 only source of truth for rebasing is `upstream/main`.
-
-Use `.github/workflows/fork-rebase-check.yml` to catch breakage on a schedule.
 
 Recommended local git config:
 
 ```sh
 git config rerere.enabled true
+git config rerere.autoupdate true
 git config rebase.autoStash true
 ```
 
@@ -120,27 +124,74 @@ Practical cadence:
 - if actively building, do not let `glossolalia` drift for more than about a week
 - if a topic branch lives too long, rebase it or cherry-pick the good commits out
 
-## Release Cutover
+## Release
 
-Fork-owned macOS release automation lives in `.github/workflows/release-fork-macos.yml`.
+macOS release is local and manual.
 
-Required secrets:
+Use `scripts/release-macos-local.sh` from a clean `glossolalia` branch after
+you finish the upstream rebase and conflict repair.
 
-- `MACOS_CERTIFICATE`
-- `MACOS_CERTIFICATE_PWD`
-- `MACOS_CERTIFICATE_NAME`
-- `MACOS_CI_KEYCHAIN_PWD`
-- `APPLE_NOTARIZATION_ISSUER`
-- `APPLE_NOTARIZATION_KEY_ID`
-- `APPLE_NOTARIZATION_KEY`
-- `SPARKLE_PUBLIC_ED_KEY`
-- `SPARKLE_PRIVATE_ED_KEY`
+Before signing, install and smoke-test the branded app:
+
+```sh
+./scripts/build-macos-app.sh --install
+```
+
+Check normal terminal use, config reload, audio response, background media, and
+the packaged app icon. Run `zig build test -Demit-macos-app=false` before a
+public release; this expensive checkpoint may be human-run.
+
+Because the curated stack is rebased, publish it after review with:
+
+```sh
+git fetch origin glossolalia
+git push --force-with-lease origin glossolalia
+```
+
+The release script checks this exact relationship before publishing a tag or
+GitHub release. Building and verification do not modify Git or GitHub.
+
+Local prerequisites:
+
+- Apple signing identity installed in login keychain
+- `xcrun notarytool store-credentials` already set up with a local profile
+- `gh auth status` succeeds for this repo
 
 Before first public release:
 
-- replace the placeholder app icon asset name if you want a non-Ghostty icon
-- choose the final release bundle ID and product name in the workflow env
-- enable GitHub Pages so the generated `appcast.xml` has a stable URL
+- replace the source icon in `images/icons/glossolalia-source-2048.png` and the rendered files in `macos/Assets.xcassets/AppIconImage.imageset` and `macos/Assets.xcassets/GlossolaliaAppIcon.appiconset` if you want a different app icon
+- confirm `com.henryzoo.glossolalia` is the bundle ID you want to keep
+- set `CODESIGN_IDENTITY` and `NOTARY_PROFILE` in your shell
+
+Release flow:
+
+```sh
+export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export NOTARY_PROFILE="glossolalia-notary"
+
+./scripts/release-macos-local.sh preflight 0.1.0
+./scripts/release-macos-local.sh prepare 0.1.0
+./scripts/release-macos-local.sh verify 0.1.0
+./scripts/release-macos-local.sh publish 0.1.0
+```
+
+`preflight` fails before compilation if the Developer ID identity or notary
+profile is unavailable. `prepare` builds, signs, notarizes, staples, packages,
+checksums, and verifies into `dist/releases/v0.1.0`. `verify` is safe to repeat.
+`publish` pushes only the annotated tag and creates a draft GitHub release from
+the verified artifacts; use `publish 0.1.0 --final` for immediate publication.
+
+Updater feeds remain disabled until Glossolalia owns a separate Sparkle signing
+key and appcast. GitHub DMG and ZIP releases do not depend on Sparkle.
+
+## Pull Requests
+
+Fork PRs should stay light:
+
+- use topic branches against `glossolalia`
+- keep commits scoped by concern
+- expect manual review and local rebases for upstream conflict repair
+- rely on `.github/workflows/fork-sanity.yml` only for lightweight hygiene, not product signoff
 
 ## Agent Rules
 

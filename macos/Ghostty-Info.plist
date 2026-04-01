@@ -120,8 +120,6 @@
 	</array>
 	<key>SUEnableAutomaticChecks</key>
 	<false/>
-	<key>SUPublicEDKey</key>
-	<string>wsNcGf5hirwtdXMVnYoxRIX/SqZQLMOsYlD3q3imeok=</string>
 	<key>UTExportedTypeDeclarations</key>
 	<array>
 		<dict>

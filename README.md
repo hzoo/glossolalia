@@ -43,6 +43,23 @@ glossolalia-strength = 0.7
 
 Reload config: `cmd+shift+,`
 
+Audio uses the macOS system default input when `glossolalia-device` is omitted,
+so the built-in microphone works without extra setup. To route system audio or
+choose another input, set one of these and reload the config:
+
+```ini
+# Prefer BlackHole, Loopback, or Soundflower; fall back to the default input.
+glossolalia-device = auto
+
+# Instead, use a case-sensitive substring from a specific capture device name.
+# glossolalia-device = BlackHole
+# glossolalia-device = USB
+```
+
+Use `glossolalia-device = default` to explicitly return to the system input.
+Loopback devices still need macOS audio routing configured so music reaches the
+selected capture device.
+
 Background media test (OSC):
 
 ```sh
@@ -73,6 +90,22 @@ Install it into `/Applications`:
 ```sh
 ./scripts/build-macos-app.sh --install
 ```
+
+Public builds are available from [GitHub Releases](https://github.com/hzoo/glossolalia/releases).
+Download `Glossolalia.dmg`, open it, and drag Glossolalia into Applications.
+
+Prepare and verify a public release from your local machine:
+
+```sh
+export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+export NOTARY_PROFILE="glossolalia-notary"
+./scripts/release-macos-local.sh preflight 0.1.0
+./scripts/release-macos-local.sh prepare 0.1.0
+./scripts/release-macos-local.sh publish 0.1.0
+```
+
+`publish` creates a draft GitHub release. Add `--final` only when the verified
+artifacts should become public immediately.
 
 Optional local branding override:
 

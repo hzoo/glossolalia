@@ -1,0 +1,25 @@
+on:
+  push: {}
+  pull_request: {}
+  workflow_dispatch: {}
+
+name: Fork Sanity
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name != 'glossolalia' && github.ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  sanity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Diff hygiene
+        run: git diff --check
+
+      - name: Shell syntax
+        run: |
+          bash -n scripts/build-macos-app.sh
+          bash -n scripts/fork-sync.sh
+          bash -n scripts/release-macos-local.sh

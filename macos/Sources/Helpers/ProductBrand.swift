@@ -17,11 +17,9 @@ enum ProductBrand {
     static func updateFeedURL(channel: Ghostty.AutoUpdateChannel) -> String? {
         switch channel {
         case .tip:
-            return infoString("GlossolaliaUpdateTipFeedURL") ??
-                "https://tip.files.ghostty.dev/appcast.xml"
+            return infoString("GlossolaliaUpdateTipFeedURL")
         case .stable:
-            return infoString("GlossolaliaUpdateStableFeedURL") ??
-                "https://release.files.ghostty.org/appcast.xml"
+            return infoString("GlossolaliaUpdateStableFeedURL")
         }
     }
 
