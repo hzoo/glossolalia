@@ -288,6 +288,7 @@ pub const Handler = struct {
             => {},
 
             // Have no terminal-modifying effect
+            .background_video_url,
             .show_desktop_notification,
             .progress_report,
             .clipboard_contents,

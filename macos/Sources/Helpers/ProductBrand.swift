@@ -4,9 +4,9 @@ enum ProductBrand {
     static let displayName =
         infoString("CFBundleDisplayName") ??
         infoString("CFBundleName") ??
-        "Ghostty"
+        "Glossolalia"
 
-    static let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.mitchellh.ghostty"
+    static let bundleIdentifier = Bundle.main.bundleIdentifier ?? "com.henryzoo.glossolalia"
     static let notificationNamespace = infoString("GlossolaliaNotificationNamespace") ?? bundleIdentifier
     static let defaultsSuiteName = infoString("GlossolaliaDefaultsSuiteName") ?? bundleIdentifier
 

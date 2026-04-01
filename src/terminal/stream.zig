@@ -2259,7 +2259,7 @@ pub fn Stream(comptime H: type) type {
                 },
 
                 .background_video_url => |v| {
-                    try self.handler.vt(.background_video_url, .{ .url = v.value });
+                    self.handler.vt(.background_video_url, .{ .url = v.value });
                 },
 
                 .mouse_shape => |v| {
