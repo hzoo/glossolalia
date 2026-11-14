@@ -23,11 +23,13 @@ not from a file argument. This affects how you invoke AFL++ tools:
   cat testcase | afl-showmap -o map.txt -- zig-out/bin/fuzz-stream
   ```
 
-- **`afl-cmin`**: Do **not** use `@@`. Requires `AFL_NO_FORKSRV=1` with
-  the bash version due to a bug in the Python `afl-cmin` (AFL++ 4.35c):
+- **`afl-cmin`**: Do **not** use `@@`. With AFL++ 4.35c, use
+  `AFL_NO_FORKSRV=1` and the bash script to avoid the Python script's bug.
+  Locate the installed `afl-cmin.bash` and set `AFL_CMIN_BASH` to its path;
+  do not reuse a version-specific Homebrew Cellar path:
 
   ```sh
-  AFL_NO_FORKSRV=1 /opt/homebrew/Cellar/afl++/4.35c/libexec/afl-cmin.bash \
+  AFL_NO_FORKSRV=1 "${AFL_CMIN_BASH:?Set AFL_CMIN_BASH to the installed afl-cmin.bash path}" \
     -i afl-out/fuzz-stream/default/queue -o corpus/stream-cmin \
     -- zig-out/bin/fuzz-stream
   ```
